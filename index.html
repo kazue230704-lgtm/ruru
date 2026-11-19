@@ -325,6 +325,17 @@
   .pg > .wrap { width: 100%; }
   .toast { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
 
+  /* ===== 메뉴 투표 ===== */
+  .vopts { display: grid; gap: 14px; margin-top: 24px; }
+  .vopt { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; min-height: 84px; padding: 16px 20px; border: 2px solid #262626; background: #FBE8A6; color: #262626; font-family: var(--font); border-radius: 0; cursor: pointer; }
+  .vopt .vn { flex: none; width: 44px; height: 44px; border: 2px solid #262626; display: grid; place-items: center; font-weight: 700; font-size: 1.25rem; }
+  .vopt .vt { display: inline-block; font-weight: 600; font-size: 0.95rem; background: #015829; color: #FFFFFF; padding: 2px 10px; }
+  .vopt .vm { margin-top: 4px; font-weight: 700; font-size: 1.45rem; line-height: 1.3; }
+  .vopt[aria-pressed="true"] { background: #015829; border-color: #015829; color: #FFFFFF; }
+  .vopt[aria-pressed="true"] .vn { background: #FFFFFF; color: #015829; border-color: #FFFFFF; }
+  .vopt[aria-pressed="true"] .vt { background: #F5D76E; color: #262626; }
+  .vopt:focus-visible { outline: 3px solid #262626; outline-offset: 3px; }
+  .vlink { display: block; text-align: center; margin: 8px auto 0; min-height: 48px; line-height: 48px; font-weight: 700; font-size: 1.1rem; color: #262626; text-decoration: underline; text-underline-offset: 6px; }
 </style>
 </head>
 <body>
@@ -504,6 +515,20 @@
 </div></div></div>
 </div>
 
+<div id="view-vote" hidden>
+<div class="pg"><div class="grow wrap">
+  <div class="prog"><span>메뉴 투표</span></div>
+  <h1 class="app-h" id="vote-h" tabindex="-1">가고 싶은 곳을<br>하나 골라 주세요</h1>
+  <p class="app-sub" id="vote-sub">고른 뒤 톡방에 붙여넣어 알려 주세요. 톡방에서 가장 많이 나온 곳으로 정해요.</p>
+  <div class="vopts" id="vote-opts" role="group" aria-label="투표 후보"></div>
+  <p class="app-note">방문 전 영업 여부를 확인하세요</p>
+  <a class="vlink" href="#app">나도 추천 받아보기</a>
+</div>
+<div class="wrap foot-bar"><div class="row">
+  <button type="button" class="btn" id="v-go" disabled>투표하기</button>
+</div></div></div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script>
 // 추천 결과 카드: 손가락으로 좌우로 넘김. 처음에는 저절로 넘어가다가, 만지는 순간 멈춘다.
@@ -622,6 +647,7 @@
 // 추천 앱(3단계): 서버 없이 브라우저에서만 계산한다. 식당 목록은 안산시 점심 맛집 목록(엑셀)이다.
 (function () {
   var DATA = [{"name": "미분당", "type": "쌀국수", "area": "고잔신도시"}, {"name": "분타", "type": "쌀국수", "area": "고잔신도시"}, {"name": "피자", "type": "피자", "area": "고잔신도시"}, {"name": "셰프스 라운지", "type": "파스타", "area": "고잔신도시"}, {"name": "피자몰(NC)", "type": "피자", "area": "고잔신도시"}, {"name": "페퍼로니 버튼", "type": "피자", "area": "고잔신도시"}, {"name": "가미", "type": "일식", "area": "고잔신도시"}, {"name": "주연스시", "type": "일식", "area": "고잔신도시"}, {"name": "백소정", "type": "돈까스", "area": "고잔신도시"}, {"name": "홍푸", "type": "중식", "area": "고잔신도시"}, {"name": "먹물오징어", "type": "철판", "area": "고잔신도시"}, {"name": "그 집 쭈꾸미", "type": "철판", "area": "고잔신도시"}, {"name": "탑국수", "type": "수제비/만두", "area": "고잔신도시"}, {"name": "항아리 수제비", "type": "수제비/만두", "area": "고잔신도시"}, {"name": "홍콩반점0410", "type": "중식", "area": "중앙동"}, {"name": "동양솥밥", "type": "덮밥", "area": "중앙동"}, {"name": "여우카츠", "type": "돈까스", "area": "초지동"}, {"name": "속초본가", "type": "수제비/만두", "area": "초지동"}, {"name": "오투닭갈비", "type": "철판", "area": "초지동"}];
+  window.__MENU_DATA = DATA;
   var $ = function (id) { return document.getElementById(id); };
   var want = {}, avoid = {}, shown = [], current = [], tt;
   var steps = [].slice.call(document.querySelectorAll("#view-app [data-step]"));
@@ -699,7 +725,8 @@
 
   B.share.addEventListener("click", function () {
     if (!current.length) return;
-    var text = "오늘 메뉴 후보\n" + current.map(function (d, i) { return (i + 1) + ". " + d.type + " · " + d.name; }).join("\n") + "\n방문 전 영업 여부를 확인하세요";
+    var text = "오늘 메뉴 후보\n" + current.map(function (d, i) { return (i + 1) + ". " + d.type + " · " + d.name; }).join("\n") + "\n방문 전 영업 여부를 확인하세요"
+      + "\n\n👉 투표하기\n" + location.href.split("#")[0] + "#vote=" + current.map(function (d) { return DATA.indexOf(d); }).join(".");
     function fallback() {
       var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
       document.body.appendChild(ta); ta.select();
@@ -713,14 +740,63 @@
 })();
 </script>
 <script>
+// 메뉴 투표 화면: 공유 링크(#vote=3.7.12)에 담긴 후보 3곳을 보여주고, 고른 곳을 글로 복사한다. 서버 없이 작동한다.
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var box = $("vote-opts"), go = $("v-go"), picked = -1, cands = [], tt;
+  function say(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(function () { t.hidden = true; }, 2500); }
+  function parse() {
+    var m = /^#(?:vote|result)=([0-9.]+)$/.exec(location.hash), data = window.__MENU_DATA || [];
+    if (!m) return [];
+    return m[1].split(".").map(Number).filter(function (i, k, a) { return data[i] && a.indexOf(i) === k; }).slice(0, 3).map(function (i) { return data[i]; });
+  }
+  function render() {
+    cands = parse(); picked = -1; box.innerHTML = ""; go.disabled = true;
+    if (!cands.length) {
+      $("vote-h").innerHTML = "투표 후보를<br>찾지 못했어요";
+      $("vote-sub").textContent = "링크가 잘리지 않았는지 확인하거나, 직접 추천을 받아 보세요.";
+      go.hidden = true; return;
+    }
+    go.hidden = false;
+    $("vote-h").innerHTML = "가고 싶은 곳을<br>하나 골라 주세요";
+    $("vote-sub").textContent = "고른 뒤 톡방에 붙여넣어 알려 주세요. 톡방에서 가장 많이 나온 곳으로 정해요.";
+    cands.forEach(function (d, i) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "vopt"; b.setAttribute("aria-pressed", "false");
+      var n = document.createElement("span"); n.className = "vn"; n.textContent = i + 1;
+      var w = document.createElement("span"), t = document.createElement("span"), m = document.createElement("div");
+      t.className = "vt"; t.textContent = d.type; m.className = "vm"; m.textContent = d.name; w.appendChild(t); w.appendChild(m);
+      b.appendChild(n); b.appendChild(w);
+      b.addEventListener("click", function () {
+        picked = i; go.disabled = false;
+        [].slice.call(box.children).forEach(function (x, k) { x.setAttribute("aria-pressed", k === i ? "true" : "false"); });
+      });
+      box.appendChild(b);
+    });
+  }
+  go.addEventListener("click", function () {
+    if (picked < 0) return;
+    var d = cands[picked], text = "내 선택: " + (picked + 1) + "번 " + d.type + " · " + d.name;
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta); say(ok ? "복사했어요. 톡방에 붙여넣으세요" : "복사하지 못했어요");
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { say("복사했어요. 톡방에 붙여넣으세요"); }, fallback);
+    else fallback();
+  });
+  document.addEventListener("viewshow", function (e) { if (e.detail === "vote") { render(); var h = $("vote-h"); if (h) h.focus({ preventScroll: true }); } });
+})();
+</script>
+<script>
 // 한 파일 안의 세 화면(홈 / 이용 방법 / 추천 예시)을 주소 끝의 #home, #how, #examples 로 전환한다. 새로고침해도 같은 화면이 열린다.
 (function () {
-  var titles = { home: "오늘은 뭐 먹을까?", how: "이용 방법 | 오늘은 뭐 먹을까?", examples: "추천 예시 | 오늘은 뭐 먹을까?", app: "추천 받기 | 오늘은 뭐 먹을까?" };
+  var titles = { home: "오늘은 뭐 먹을까?", how: "이용 방법 | 오늘은 뭐 먹을까?", examples: "추천 예시 | 오늘은 뭐 먹을까?", app: "추천 받기 | 오늘은 뭐 먹을까?", vote: "메뉴 투표 | 오늘은 뭐 먹을까?" };
   var links = [].slice.call(document.querySelectorAll(".menu a"));
   function show() {
-    var v = (location.hash || "#home").slice(1);
+    var v = (location.hash || "#home").slice(1).split("=")[0];
     if (!titles[v]) v = "home";
-    ["home", "how", "examples", "app"].forEach(function (k) { document.getElementById("view-" + k).hidden = (k !== v); });
+    ["home", "how", "examples", "app", "vote"].forEach(function (k) { document.getElementById("view-" + k).hidden = (k !== v); });
     links.forEach(function (a) { if (a.dataset.view === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     document.title = titles[v];
     window.scrollTo(0, 0);
